@@ -1,7 +1,5 @@
 ﻿#include <iostream>
 #include "Heap.h"
-#include <queue>
-#include <utility>
 
 using namespace std;
 
@@ -53,7 +51,6 @@ void Heap::heapifyDown(Node* current) {
         heapifyDown(maxNode);
     }
 }
-
 void Heap::inorderTraversal(Node* node) {
     if (node != nullptr) {
         inorderTraversal(node->left);
@@ -80,38 +77,30 @@ void Heap::postorderTraversal(Node* node) {
 }
 
 void Heap::insert(int value) {
+
     Node* newNode = new Node(value);
 
     if (root == nullptr) {
         root = newNode;
     }
     else {
-        queue<Node*> nodeQueue;
-        nodeQueue.push(root);
-
-        while (!nodeQueue.empty()) {
-            Node* current = nodeQueue.front();
-            nodeQueue.pop();
-
-            if (current->left != nullptr && current->right != nullptr) {
-                nodeQueue.push(current->left);
-                nodeQueue.push(current->right);
-            }
-            else {
-                if (current->left == nullptr) {
-                    current->left = newNode;
-                }
-                else {
-                    current->right = newNode;
-                }
-                break;
-            }
+        Node* temp = root;
+        while (temp->left != nullptr && temp->right != nullptr) {
+            // Dodawanie węzłów na koniec kopca
+            if (temp->left != nullptr && temp->right != nullptr)
+                temp = temp->left;
+            else
+                temp = temp->right;
         }
+
+        if (temp->left == nullptr)
+            temp->left = newNode;
+        else
+            temp->right = newNode;
     }
 
     heapifyUp(newNode);
 }
-
 
 void Heap::remove(int value) {
     if (root == nullptr)
@@ -119,7 +108,6 @@ void Heap::remove(int value) {
 
     Node* nodeToRemove = nullptr;
     Node* temp = root;
-    Node* parent = nullptr;
 
     // Przeszukiwanie kopca w głąb, aby znaleźć węzeł do usunięcia
     while (temp != nullptr) {
@@ -128,8 +116,16 @@ void Heap::remove(int value) {
             break;
         }
         else {
-            parent = temp;
-            if (value < temp->value)
+            if (temp->left != nullptr && temp->left->value == value) {
+                nodeToRemove = temp->left;
+                break;
+            }
+            else if (temp->right != nullptr && temp->right->value == value) {
+                nodeToRemove = temp->right;
+                break;
+            }
+
+            if (temp->left != nullptr && value < temp->value)
                 temp = temp->left;
             else
                 temp = temp->right;
@@ -139,52 +135,27 @@ void Heap::remove(int value) {
     if (nodeToRemove == nullptr)
         return;
 
-    if (nodeToRemove->left == nullptr && nodeToRemove->right == nullptr) {
-        if (parent != nullptr) {
-            if (parent->left == nodeToRemove)
-                parent->left = nullptr;
-            else
-                parent->right = nullptr;
-        }
-        else {
-            root = nullptr;
-        }
+    Node* parentNode = getParentNode(nodeToRemove);
 
-        delete nodeToRemove;
-    }
-    else if (nodeToRemove->left == nullptr) {
-        if (parent != nullptr) {
-            if (parent->left == nodeToRemove)
-                parent->left = nodeToRemove->right;
-            else
-                parent->right = nodeToRemove->right;
-        }
-        else {
-            root = nodeToRemove->right;
-        }
-
-        delete nodeToRemove;
-    }
-    else if (nodeToRemove->right == nullptr) {
-        if (parent != nullptr) {
-            if (parent->left == nodeToRemove)
-                parent->left = nodeToRemove->left;
-            else
-                parent->right = nodeToRemove->left;
-        }
-        else {
-            root = nodeToRemove->left;
-        }
-
-        delete nodeToRemove;
+    if (parentNode != nullptr) {
+        if (parentNode->left == nodeToRemove)
+            parentNode->left = nullptr;
+        else
+            parentNode->right = nullptr;
     }
     else {
-        Node* successor = findMin(nodeToRemove->right);
-        int successorValue = successor->value;
-        remove(successorValue);
-        nodeToRemove->value = successorValue;
+        root = nullptr;
     }
 
+    if (nodeToRemove != root) {
+        nodeToRemove->left = root->left;
+        nodeToRemove->right = root->right;
+        root->left = nullptr;
+        root->right = nullptr;
+    }
+
+    delete root;
+    root = nodeToRemove;
     heapifyDown(root);
 }
 
@@ -216,5 +187,5 @@ void Heap::preorder() {
 
 void Heap::postorder() {
     postorderTraversal(root);
-        cout << endl;
+    cout << endl;
 }
